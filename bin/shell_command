@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'json'
+
+def execute(cmd)
+  `#{cmd}`
+end
+
+line = ARGF.each_line do |line|
+  payload = JSON.parse(line)
+  result = execute(payload['command'])
+  payload['result'] = result
+
+  $stdout.puts(payload.to_json)
+  $stdout.flush
+end

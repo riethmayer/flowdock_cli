@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'json'
+require 'net/http'
+
+FLOW = ENV["flowdock_flow"]
+ORGANIZATION = ENV["flowdock_organization"]
+TOKEN = ENV["flowdock_token"]
+
+def report_back(data,thread_id)
+  uri = URI(build_uri(thread_id))
+  res = Net::HTTP.post_form(uri,"event" => "message","content" => data)
+end
+
+def build_uri(thread_id)
+  "https://#{TOKEN}@api.flowdock.com/flows/#{ORGANIZATION}/#{FLOW}/threads/#{thread_id}/messages"
+end
+
+line = ARGF.each_line do |line|
+  payload = JSON.parse(line)
+  report_back(payload['result'], payload['meta']['thread_id'])
+  $stdout.puts(payload.to_json)
+  $stdout.flush
+end

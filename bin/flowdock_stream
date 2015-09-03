@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'eventmachine'
+require 'em-eventsource'
+require 'json'
+
+FLOW = ENV["flowdock_flow"]
+ORGANIZATION = ENV["flowdock_organization"]
+TOKEN = ENV["flowdock_token"]
+REGEXP = Regexp.new(ENV["flowdock_regexp"] || "^bb ")
+
+EM.run do
+  url = "https://#{TOKEN}@stream.flowdock.com/flows/#{ORGANIZATION}/#{FLOW}"
+  source = EM::EventSource.new(url)
+
+  source.message do |msg|
+    payload = JSON.parse(msg)
+    if (payload['event'] == 'message') && payload['content'] =~ REGEXP
+      $stdout.puts({'command' => payload['content'], 'meta' => payload}.to_json)
+      $stdout.flush
+    end
+  end
+
+  source.error do |error|
+    output = { 'error' => error }.to_json
+    $stdout.puts output
+    $stdout.flush
+  end
+
+  source.start
+end
+
