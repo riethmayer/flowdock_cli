@@ -2,10 +2,29 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+require 'open3'
 require 'json'
 
+def forbidden(cmd)
+  res = cmd =~ /^bb (restart|deploy|queues|github-acl|queues)([-_ a-z]*?)$/
+  !res
+end
+
 def execute(cmd)
-  `#{cmd}`
+  if forbidden(cmd)
+    return "I'm sorry Dave, I'm afraid I can't do that."
+  end
+
+  result = ""
+  stdin,stdout,stderr = Open3.popen3(cmd) do |stdin,stdout,stderr,wait_thr|
+    while(line = stdout.gets)
+      result << line
+    end
+    while(line = stderr.gets)
+      result << "    #{line}"
+    end
+  end
+  result
 end
 
 line = ARGF.each_line do |line|
